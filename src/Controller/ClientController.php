@@ -13,10 +13,11 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 class ClientController extends AbstractController
 {
-    function __construct(private SerializerInterface $serializer, private EntityManagerInterface $em){}
+    function __construct(private SerializerInterface $serializer, private EntityManagerInterface $em , private ValidatorInterface $validator){}
 
     #[Route('/client', name: 'app_client')]
     public function index(): JsonResponse
@@ -55,7 +56,17 @@ class ClientController extends AbstractController
 
         $client = $this->serializer->deserialize($request->getContent(), Client::class, 'json');
 
-        dump($request->getContent());
+        $errors = $this->validator->validate($client);
+
+
+        if ($errors->count() > 0) {
+            return new JsonResponse($this->serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
+        }
+
+
+
+
+
 
         $em->persist($client);
         $em->flush();

@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ClientRepository::class)]
 class Client
@@ -18,19 +19,29 @@ class Client
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "Le nom est obligatoire")]
+    #[Assert\Length(min: 1, max: 255, minMessage: "Le nom doit faire au moins {{ limit }} caractères", maxMessage: "Le nom ne peut pas faire plus de {{ limit }} caractères")]
     #[Groups(["getTransactions","getClient"])]
     private ?string $nom = null;
 
     #[ORM\Column]
     #[Groups(["getTransactions","getClient"])]
+    #[Assert\NotBlank(message: "Le nom est obligatoire")]
     private ?int $tel = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(["getTransactions","getClient"])]
+    #[Assert\NotBlank(message: "Le mail est obligatoire")]
+    #[Assert\Regex(
+        pattern: '/^\w+@\w+\.\w+$/',
+        message: "L'adresse email '{{ value }}' n'est pas valide. Elle doit respecter le format aaa@nom.domain."
+    )]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
     #[Groups(["getTransactions","getClient"])]
+    #[Assert\NotBlank(message: "L'adresse' est obligatoire")]
+    #[Assert\Length(min: 5, minMessage: "L'adresse doit faire au moins {{ limit }} caractères")]
     private ?string $adresse = null;
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: Import::class, orphanRemoval: true)]

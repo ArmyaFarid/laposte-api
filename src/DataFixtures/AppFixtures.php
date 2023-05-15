@@ -3,15 +3,55 @@
 namespace App\DataFixtures;
 
 use App\Entity\Client;
+use App\Entity\Employe;
 use App\Entity\Export;
 use App\Entity\Import;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Persistence\ObjectManager;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
-    public function load(ObjectManager $manager): void
+
+    public function __construct(private UserPasswordHasherInterface $userPasswordHasher)
     {
+    }
+    public function load(ObjectManager $manager ,): void
+    {
+
+        // Création d'un user "normal"
+
+        $user = new Employe();
+
+        $user->setEmail("user@lapostapi.com");
+
+        $user->setNom("employe");
+        $user->setPrenom("test");
+        $user->setTel(13345555);
+
+        $user->setRoles(["ROLE_USER"]);
+
+        $user->setPassword($this->userPasswordHasher->hashPassword($user, "password"));
+
+        $manager->persist($user);
+
+
+
+        // Création d'un user admin
+
+        $userAdmin = new Employe();
+
+        $userAdmin->setEmail("admin@lapostapi.com");
+
+        $userAdmin->setNom("admin");
+        $userAdmin->setPrenom("test");
+        $userAdmin->setTel(13345555);
+
+        $userAdmin->setRoles(["ROLE_ADMIN"]);
+
+        $userAdmin->setPassword($this->userPasswordHasher->hashPassword($userAdmin, "password"));
+
+        $manager->persist($userAdmin);
 
         $listClient = [];
         // Create 5 clients
