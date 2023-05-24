@@ -62,16 +62,9 @@ class ImportRepository extends ServiceEntityRepository
 
 
 
+    
     public function getPaginatedImportsByMonth(int $page): array
     {
-
-
-//        $minYear = (int) $this->findMinYear($qb);
-//        $maxYear = (int) $this->findMaxYear($qb);
-
-
-
-
         //min and max
         $conn = $this->getEntityManager()->getConnection();
 
@@ -98,13 +91,7 @@ class ImportRepository extends ServiceEntityRepository
 
 
 
-//        $rsm = new ResultSetMapping();
-//// build rsm here
-//
-//        $query = $this->getEntityManager()->createNativeQuery('SELECT * FROM import', $rsm);
-//        $users = $query->getResult();
-//
-//        dump($users);
+
 
         $monthCounts = array_fill($minYear, $maxYear - $minYear + 1, array_fill($minMonth, $maxMonth, 0));
 
@@ -128,44 +115,22 @@ class ImportRepository extends ServiceEntityRepository
             return array_sum($yearCounts) > 0;
         });
 
+        $reversedArray = array_reverse($monthCounts, true);
 
 
+        foreach ($reversedArray as &$innerArray) {
+            $innerArray = array_reverse($innerArray, true);
+        }
 
 
-//        $monthCount = 0;
-//        $importsByMonth = [];
-//        foreach ($monthCounts as $year => $yearCounts) {
-//            foreach ($yearCounts as $month => $count) {
-//                if (++$monthCount <= $monthsPerPage * ($page - 1)) {
-//                    continue;
-//                }
-//
-//                if ($monthCount > $monthsPerPage * $page) {
-//                    break 2;
-//                }
-//
-//                $startDate = new DateTime(sprintf('%s-%02d-01 00:00:00', $year, $month));
-//                $endDate = clone $startDate;
-//                $endDate->modify('last day of this month');
-//                $importResults = $this->createQueryBuilder('i')
-//                    ->andWhere('YEAR(i.date) = :year AND MONTH(i.date) = :month')
-//                    ->setParameter('year', $year)
-//                    ->setParameter('month', $month)
-//                    ->orderBy('i.date', 'DESC')
-//                    ->getQuery()
-//                    ->getResult();
-//
-//                dump($importResults);
-//                $importsByMonth[] = $importResults ?: [];
-//            }
-//        }
+        $monthCounts=$reversedArray;
 
 
         $importPages =[];
         foreach ($monthCounts as $year => $yearCounts){
             $currentYear = $year;
 
-            $pageItems = [];
+        
 
             foreach($yearCounts as $month =>$monthCount){
                 if ($monthCount > 0) {
@@ -181,14 +146,12 @@ class ImportRepository extends ServiceEntityRepository
                         ->getResult();
 
                     $importPages[]=$importResults;
-                    $pageItems[]=$importResults;
                 }
             }
 
-//            $importPages[]=$pageItems;
         }
 
-        $totalPage = count($importPages)-1;
+        $totalPage = count($importPages);
 
         if ($page < 1 || $page > $totalPage) {
 //            throw new NotFoundHttpException(sprintf('Page "%s" does not exist.', $page));
@@ -202,7 +165,7 @@ class ImportRepository extends ServiceEntityRepository
         $pagination = [
             'page' => $page,
             'total_pages' => count($importPages),
-            'imports' => $importPages[$page]
+            'imports' => $importPages[$page-1]
         ];
 
 
