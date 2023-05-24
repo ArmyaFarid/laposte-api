@@ -6,6 +6,11 @@ use App\Entity\Export;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
 
+
+use Doctrine\ORM\Query\ResultSetMapping;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use DateTime;
+
 /**
  * @extends ServiceEntityRepository<Export>
  *
