@@ -13,22 +13,28 @@ class Employe implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
+    #[Groups(["getEmploye","getDetailEmploye"])]
     #[ORM\Column]
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
+    #[Groups(["getEmploye","getDetailEmploye"])]
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["getEmploye","getDetailEmploye"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(["getEmploye","getDetailEmploye"])]
     private ?string $prenom = null;
 
     #[ORM\Column]
+    #[Groups(["getEmploye","getDetailEmploye"])]
     private ?int $tel = null;
 
     #[ORM\Column]
+    #[Groups(["getEmploye","getDetailEmploye"])]
     private array $roles = [];
 
     /**

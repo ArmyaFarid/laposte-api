@@ -22,6 +22,7 @@ class AuthenticationSuccessListener
         }
 
         $data['data'] = array(
+            'employeId'=>$user->getId(),
             'roles' => $user->getRoles(),
         );
 
