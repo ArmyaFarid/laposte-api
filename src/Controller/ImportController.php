@@ -59,10 +59,16 @@ class ImportController extends AbstractController
 
 
     #[Route('/api/import/', name:"createImport", methods: ['POST'])]
-    public function createImport(Request $request, SerializerInterface $serializer,UrlGeneratorInterface $urlGenerator, ClientRepository $clientRepository): JsonResponse
+    public function createImport(Request $request, SerializerInterface $serializer,UrlGeneratorInterface $urlGenerator, ClientRepository $clientRepository, ImportRepository $importRepository): JsonResponse
     {
         $em=$this->em;
         $import = $serializer->deserialize($request->getContent(), Import::class, 'json');
+
+        // Check if an import already exists for the same date
+        $existingImport = $importRepository->findOneBy(['date' => $import->getDate()]);
+        if ($existingImport !== null) {
+            return new JsonResponse(['error' => 'An import already exists for this date.'], Response::HTTP_BAD_REQUEST);
+        }
 
         // Récupération de l'ensemble des données envoyées sous forme de tableau
         $content = $request->toArray();
@@ -77,6 +83,8 @@ class ImportController extends AbstractController
 
         $import->setClient($clientRepository->find($idClient));
 
+
+
         $em->persist($import);
         $em->flush();
 
@@ -87,13 +95,19 @@ class ImportController extends AbstractController
     }
 
     #[Route('/api/import/{id}', name:"updateImport", methods:['PUT'])]
-    public function updateBook(Request $request, Import $currentImport, ClientRepository $clientRepository): JsonResponse
+    public function updateBook(Request $request, Import $currentImport, ClientRepository $clientRepository ,ImportRepository $importRepository): JsonResponse
     {
         $em=$this->em;
         $updatedImport = $this->serializer->deserialize($request->getContent(),
             Import::class,
             'json',
             [AbstractNormalizer::OBJECT_TO_POPULATE => $currentImport]);
+
+        // Check if an import already exists for the same date
+        $existingImport = $importRepository->findOneBy(['date' => $updatedImport->getDate()]);
+        if ($existingImport !== null && $existingImport !== $currentImport) {
+            return new JsonResponse(['error' => 'An import already exists for this date.'], Response::HTTP_BAD_REQUEST);
+        }
 
         $content = $request->toArray();
         $idClient = $content['clientId'] ?? -1;

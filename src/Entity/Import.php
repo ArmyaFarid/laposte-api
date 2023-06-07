@@ -5,9 +5,15 @@ namespace App\Entity;
 use App\Repository\ImportRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Serializer\Annotation\Groups;
 
+// DON'T forget the following use statement!!!
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
+
 #[ORM\Entity(repositoryClass: ImportRepository::class)]
+#[UniqueEntity('email')]
 class Import
 {
     #[ORM\Id]
@@ -18,6 +24,7 @@ class Import
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Groups(["getTransactions","getClient","getDetailClient"])]
+    #[Assert\Date]
     private ?\DateTimeInterface $date = null;
 
     #[ORM\Column]
@@ -149,4 +156,21 @@ class Import
 
         return $this;
     }
+
+
+    #[Assert\Callback]
+    public function validateDate(ExecutionContextInterface $context,ImportRepository $importRepository): void
+    {
+
+        $repository = $importRepository;
+        $existingImport = $repository->findOneBy(['date' => $this->date]);
+
+        if ($existingImport !== null && $existingImport !== $this) {
+            $context->buildViolation('An import already exists for this date.')
+                ->atPath('date')
+                ->addViolation();
+        }
+    }
+
+
 }

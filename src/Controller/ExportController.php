@@ -59,10 +59,16 @@ class ExportController extends AbstractController
 
 
     #[Route('/api/export/', name:"createExport", methods: ['POST'])]
-    public function createExport(Request $request, SerializerInterface $serializer,UrlGeneratorInterface $urlGenerator, ClientRepository $clientRepository): JsonResponse
+    public function createExport(Request $request, SerializerInterface $serializer,UrlGeneratorInterface $urlGenerator, ClientRepository $clientRepository,ExportRepository $exportRepository): JsonResponse
     {
         $em=$this->em;
         $export = $serializer->deserialize($request->getContent(), Export::class, 'json');
+
+        // Check if an import already exists for the same date
+        $existingExport = $exportRepository->findOneBy(['date' => $export->getDate()]);
+        if ($existingExport !== null) {
+            return new JsonResponse(['error' => 'An export already exists for this date.'], Response::HTTP_BAD_REQUEST);
+        }
 
         // Récupération de l'ensemble des données envoyées sous forme de tableau
         $content = $request->toArray();
@@ -87,13 +93,19 @@ class ExportController extends AbstractController
     }
 
     #[Route('/api/export/{id}', name:"updateExport", methods:['PUT'])]
-    public function updateBook(Request $request, Export $currentExport, ClientRepository $clientRepository): JsonResponse
+    public function updateBook(Request $request, Export $currentExport, ClientRepository $clientRepository,ExportRepository $exportRepository): JsonResponse
     {
         $em=$this->em;
         $updatedExport = $this->serializer->deserialize($request->getContent(),
             Export::class,
             'json',
             [AbstractNormalizer::OBJECT_TO_POPULATE => $currentExport]);
+
+        // Check if an import already exists for the same date
+        $existingImport = $exportRepository->findOneBy(['date' => $updatedExport->getDate()]);
+        if ($existingImport !== null && $existingImport !== $currentExport) {
+            return new JsonResponse(['error' => 'An export already exists for this date.'], Response::HTTP_BAD_REQUEST);
+        }
 
         $content = $request->toArray();
         $idClient = $content['clientId'] ?? -1;
