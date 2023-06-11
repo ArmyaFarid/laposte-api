@@ -93,7 +93,7 @@ class ExportController extends AbstractController
     }
 
     #[Route('/api/export/{id}', name:"updateExport", methods:['PUT'])]
-    public function updateBook(Request $request, Export $currentExport, ClientRepository $clientRepository,ExportRepository $exportRepository): JsonResponse
+    public function updateExport(Request $request, Export $currentExport, ClientRepository $clientRepository,ExportRepository $exportRepository): JsonResponse
     {
         $em=$this->em;
         $updatedExport = $this->serializer->deserialize($request->getContent(),

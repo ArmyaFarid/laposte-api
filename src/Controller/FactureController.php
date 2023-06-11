@@ -2,9 +2,14 @@
 
 namespace App\Controller;
 
+use App\Entity\Client;
+use App\Entity\Export;
 use App\Entity\Facture;
+use App\Entity\Import;
 use App\Repository\ClientRepository;
 use App\Repository\FactureRepository;
+use App\Units\FactureDataMaker;
+use App\Units\UnitPrice;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -72,5 +77,111 @@ class FactureController extends AbstractController
 
         return new JsonResponse($jsonImport, Response::HTTP_CREATED, ["Location" => $location], true);
     }
+
+    #[Route('api/facture/{id}/imports-and-exports/{month}', name: 'client_imports_exports', methods: ['GET'])]
+    public function getDataForFacture(Client $client, string $month ,SerializerInterface $serializer ,EntityManagerInterface $entityManager): JsonResponse
+    {
+        $unitPrice = new UnitPrice();
+        // Extract the year and month from the provided string
+        [$year, $month] = explode('-', $month);
+
+        // Create DateTime objects for the start and end of the specified month
+        $startDate = new \DateTime("$year-$month-01");
+        $endDate = new \DateTime("$year-$month-01 +1 month -1 day");
+
+        // Retrieve imports and exports within the specified date range
+//        $imports = $client->getImports()->filter(function ($import) use ($startDate, $endDate) {
+//            return $import->getDate() >= $startDate && $import->getDate() <= $endDate;
+//        });
+//
+//        $exports = $client->getExports()->filter(function ($export) use ($startDate, $endDate) {
+//            return $export->getDate() >= $startDate && $export->getDate() <= $endDate;
+//        });
+//        dump($imports);
+//
+//
+//        // Serialize the imports and exports to JSON using Symfony's Serializer component
+//        $data = [
+//            'imports' => $this->serializer->normalize($imports, null, ['groups' => ['getClient', 'getDetailClient']]),
+//            'exports' => $this->serializer->normalize($exports, null, ['groups' => ['getClient', 'getDetailClient']])
+//        ];
+//
+//        return new JsonResponse($data, Response::HTTP_OK);
+        // Retrieve the client's exports for the given month
+
+        $exports = $entityManager->getRepository(Export::class)
+            ->createQueryBuilder('e')
+            ->where('e.client = :client')
+            ->andWhere('e.date BETWEEN :startDate AND :endDate')
+            ->setParameter('client', $client)
+            ->setParameter('startDate', $startDate)
+            ->setParameter('endDate', $endDate)
+            ->getQuery()
+            ->getResult();
+
+        $imports = $entityManager->getRepository(Import::class)
+            ->createQueryBuilder('e')
+            ->where('e.client = :client')
+            ->andWhere('e.date BETWEEN :startDate AND :endDate')
+            ->setParameter('client', $client)
+            ->setParameter('startDate', $startDate)
+            ->setParameter('endDate', $endDate)
+            ->getQuery()
+            ->getResult();
+
+        // You can serialize the $exports to JSON and return a JsonResponse
+        // using Symfony's serializer component or any other method you prefer
+
+        $jsonExport = $this->serializer->normalize($exports, null, ['groups' => 'getTransactions']);
+        $jsonImport = $this->serializer->normalize($imports, null, ['groups' => 'getTransactions']);
+
+
+        $facture = new FactureDataMaker($imports,$exports,$unitPrice,$startDate,$client->getId());
+
+        // Serialize the imports and exports to JSON using Symfony's Serializer component
+        $data = [
+            'imports' => $jsonImport,
+            'exports' => $jsonExport
+        ];
+
+        $jsonFacture = $this->serializer->normalize($facture);
+
+
+
+        return new JsonResponse($jsonFacture, Response::HTTP_OK, ['accept' => 'json']);
+    }
+
+    private function calculateTotalQuantity(array $data, $key)
+    {
+        $total = 0;
+        foreach ($data as $item) {
+            switch ($key) {
+                case 'range_5':
+                    $total += $item->getRange5();
+                    break;
+                case 'range_10':
+                    $total += $item->getRange10();
+                    break;
+                case 'range_15':
+                    $total += $item->getRange15();
+                    break;
+                case 'range_20':
+                    $total += $item->getRange20();
+                    break;
+                case 'range_25':
+                    $total += $item->getRange25();
+                    break;
+                case 'range_30':
+                    $total += $item->getRange30();
+                    break;
+                default:
+                    // Handle unrecognized key
+                    break;
+            }
+        }
+        return $total;
+    }
+
+
 
 }

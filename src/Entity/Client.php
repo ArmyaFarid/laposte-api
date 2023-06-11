@@ -15,22 +15,22 @@ class Client
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getTransactions","getClient","getDetailClient"])]
+    #[Groups(["getTransactions","getClient","getDetailClient","getDetailFacture",'getFacture'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
     #[Assert\NotBlank(message: "Le nom est obligatoire")]
     #[Assert\Length(min: 1, max: 255, minMessage: "Le nom doit faire au moins {{ limit }} caractères", maxMessage: "Le nom ne peut pas faire plus de {{ limit }} caractères")]
-    #[Groups(["getTransactions","getClient"])]
+    #[Groups(["getTransactions","getClient","getDetailClient",'getFacture'])]
     private ?string $nom = null;
 
     #[ORM\Column]
-    #[Groups(["getTransactions","getClient"])]
+    #[Groups(["getTransactions","getClient","getDetailClient"])]
     #[Assert\NotBlank(message: "Le nom est obligatoire")]
     private ?int $tel = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getTransactions","getClient"])]
+    #[Groups(["getTransactions","getClient","getDetailClient"])]
     #[Assert\NotBlank(message: "Le mail est obligatoire")]
     #[Assert\Regex(
         pattern: '/^\w+@\w+\.\w+$/',
@@ -39,21 +39,37 @@ class Client
     private ?string $email = null;
 
     #[ORM\Column(length: 255)]
-    #[Groups(["getTransactions","getClient"])]
+    #[Groups(["getTransactions","getClient","getDetailClient"])]
     #[Assert\NotBlank(message: "L'adresse' est obligatoire")]
     #[Assert\Length(min: 5, minMessage: "L'adresse doit faire au moins {{ limit }} caractères")]
     private ?string $adresse = null;
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: Import::class, orphanRemoval: true)]
-    #[Groups(["getClient","getDetailClient"])]
+    #[Groups(["getDetailClient"])]
     private Collection $imports;
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: Export::class, orphanRemoval: true)]
-    #[Groups(["getClient","getDetailClient"])]
+    #[Groups(["getDetailClient"])]
     private Collection $exports;
 
     #[ORM\OneToMany(mappedBy: 'client', targetEntity: Facture::class)]
+    #[Groups(["getDetailClient"])]
     private Collection $factures;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["getDetailClient"])]
+    private ?string $codepostal = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["getDetailClient"])]
+    private ?string $matriculefiscale = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(["getDetailClient"])]
+    private ?string $ville = null;
+
+
+
 
     public function __construct()
     {
@@ -201,6 +217,42 @@ class Client
                 $facture->setClient(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getCodepostal(): ?string
+    {
+        return $this->codepostal;
+    }
+
+    public function setCodepostal(?string $codepostal): self
+    {
+        $this->codepostal = $codepostal;
+
+        return $this;
+    }
+
+    public function getMatriculefiscale(): ?string
+    {
+        return $this->matriculefiscale;
+    }
+
+    public function setMatriculefiscale(?string $matriculefiscale): self
+    {
+        $this->matriculefiscale = $matriculefiscale;
+
+        return $this;
+    }
+
+    public function getVille(): ?string
+    {
+        return $this->ville;
+    }
+
+    public function setVille(?string $ville): self
+    {
+        $this->ville = $ville;
 
         return $this;
     }

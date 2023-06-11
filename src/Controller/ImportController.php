@@ -94,8 +94,9 @@ class ImportController extends AbstractController
         return new JsonResponse($jsonImport, Response::HTTP_CREATED, ["Location" => $location], true);
     }
 
+
     #[Route('/api/import/{id}', name:"updateImport", methods:['PUT'])]
-    public function updateBook(Request $request, Import $currentImport, ClientRepository $clientRepository ,ImportRepository $importRepository): JsonResponse
+    public function updateImport(Request $request, Import $currentImport, ClientRepository $clientRepository ,ImportRepository $importRepository): JsonResponse
     {
         $em=$this->em;
         $updatedImport = $this->serializer->deserialize($request->getContent(),

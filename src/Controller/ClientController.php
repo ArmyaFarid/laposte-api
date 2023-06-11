@@ -31,8 +31,8 @@ class ClientController extends AbstractController
     #[Route('api/client',name: 'allClients' , methods: ['GET'])]
     function getAuAllAuthor(ClientRepository $clientRepository):JsonResponse
     {
-        $authorList =  $clientRepository->findAll();
-        $jsonList = $this->serializer->serialize($authorList,'json',['groups'=>'getClient']);
+        $clients =  $clientRepository->findAll();
+        $jsonList = $this->serializer->serialize($clients,'json',['groups'=>'getClient']);
         return new JsonResponse($jsonList,Response::HTTP_OK,[],true);
     }
 
