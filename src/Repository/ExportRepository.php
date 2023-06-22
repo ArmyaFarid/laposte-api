@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Client;
 use App\Entity\Export;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -45,12 +46,12 @@ class ExportRepository extends ServiceEntityRepository
     }
 
 
-    public function getPaginatedExportsByMonth(int $page): array
+    public function getPaginatedExportsByMonth(int $page, Client|null $client): array
     {
         //min and max
         $conn = $this->getEntityManager()->getConnection();
 
-        $sql = 'SELECT MIN(YEAR(date)) AS minYear, MAX(YEAR(date)) AS maxYear FROM export';
+        $sql = 'SELECT MIN(YEAR(date)) AS minYear, MAX(YEAR(date)) AS maxYear FROM export WHERE client_id = '.$client->getId();
 
         $stmt = $conn->prepare($sql);
         $resultSet = $stmt->executeQuery();
@@ -81,6 +82,11 @@ class ExportRepository extends ServiceEntityRepository
 
         $qb = $this->createQueryBuilder('i')
             ->orderBy('i.date', 'ASC');
+
+        if ($client !== null) {
+            $qb->andWhere('i.client = :clientId')
+                ->setParameter('clientId', $client);
+        }
 
         $exports = $qb->getQuery()->getResult();
 
@@ -125,9 +131,14 @@ class ExportRepository extends ServiceEntityRepository
                         ->andWhere('YEAR(i.date) = :year AND MONTH(i.date) = :month')
                         ->setParameter('year', $year)
                         ->setParameter('month', $month)
-                        ->orderBy('i.date', 'DESC')
-                        ->getQuery()
-                        ->getResult();
+                        ->orderBy('i.date', 'DESC');
+
+                    if ($client !== null) {
+                        $exportResults->andWhere('i.client = :clientId')
+                            ->setParameter('clientId', $client);
+                    }
+
+                    $exportResults = $exportResults->getQuery()->getResult();
 
                     
 

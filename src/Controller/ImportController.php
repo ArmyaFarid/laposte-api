@@ -6,6 +6,7 @@ use App\Entity\Import;
 use App\Repository\ClientRepository;
 use App\Repository\ImportRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -14,13 +15,14 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 
 class ImportController extends AbstractController
 {
 
-    function __construct(private SerializerInterface $serializer, private EntityManagerInterface $em){}
+    function __construct(private SerializerInterface $serializer, private EntityManagerInterface $em ,private TokenStorageInterface $tokenStorageInterface,private JWTTokenManagerInterface $jwtManager){}
 
     #[Route('/import', name: 'app_import')]
     public function index(): JsonResponse
@@ -120,10 +122,18 @@ class ImportController extends AbstractController
 
 
     #[Route('/api/imports', name: 'api_imports', methods: ['GET'])]
-    public function imports(Request $request, ImportRepository $importRepository, int $page = 1): JsonResponse
+    public function imports(Request $request, ImportRepository $importRepository,ClientRepository $clientRepository, int $page = 1): JsonResponse
     {
         $page = $request->query->getInt('page', 1);
-        $imports = $importRepository->getPaginatedImportsByMonth($page);
+        $client = null;
+        $decodedJwtToken = $this->jwtManager->decode($this->tokenStorageInterface->getToken());
+
+        if (in_array("ROLE_CLIENT", $decodedJwtToken['roles'])) {
+            $clientEmail = $decodedJwtToken['username'];
+            $client = $clientRepository->findOneByEmailField($clientEmail);
+        }
+
+        $imports = $importRepository->getPaginatedImportsByMonth($page,$client);
 
 //        return json_encode($imports, JSON_FORCE_OBJECT);
         $jsonImport = $this->serializer->serialize($imports, 'json', ['groups' => 'getTransactions']);

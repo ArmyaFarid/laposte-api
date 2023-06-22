@@ -2,6 +2,7 @@
 
 namespace App\Repository;
 
+use App\Entity\Client;
 use App\Entity\Import;
 use DateTime;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
@@ -63,12 +64,12 @@ class ImportRepository extends ServiceEntityRepository
 
 
     
-    public function getPaginatedImportsByMonth(int $page): array
+    public function getPaginatedImportsByMonth(int $page, Client|null $client): array
     {
         //min and max
         $conn = $this->getEntityManager()->getConnection();
 
-        $sql = 'SELECT MIN(YEAR(date)) AS minYear, MAX(YEAR(date)) AS maxYear FROM import';
+        $sql = 'SELECT MIN(YEAR(date)) AS minYear, MAX(YEAR(date)) AS maxYear FROM import WHERE client_id = '.$client->getId();
 
         $stmt = $conn->prepare($sql);
         $resultSet = $stmt->executeQuery();
@@ -84,6 +85,10 @@ class ImportRepository extends ServiceEntityRepository
         //get all data
         $sql = 'SELECT * FROM import';
 
+        if ($client){
+            $sql = 'SELECT * FROM import WHERE client_id = '.$client->getId();
+        }
+
         $stmt = $conn->prepare($sql);
         $resultSet = $stmt->executeQuery();
 
@@ -97,6 +102,11 @@ class ImportRepository extends ServiceEntityRepository
 
         $qb = $this->createQueryBuilder('i')
             ->orderBy('i.date', 'ASC');
+
+        if ($client !== null) {
+            $qb->andWhere('i.client = :clientId')
+                ->setParameter('clientId', $client);
+        }
 
         $imports = $qb->getQuery()->getResult();
 
@@ -141,9 +151,14 @@ class ImportRepository extends ServiceEntityRepository
                         ->andWhere('YEAR(i.date) = :year AND MONTH(i.date) = :month')
                         ->setParameter('year', $year)
                         ->setParameter('month', $month)
-                        ->orderBy('i.date', 'DESC')
-                        ->getQuery()
-                        ->getResult();
+                        ->orderBy('i.date', 'DESC');
+
+                    if ($client !== null) {
+                        $importResults->andWhere('i.client = :clientId')
+                            ->setParameter('clientId', $client);
+                    }
+
+                    $importResults = $importResults->getQuery()->getResult();
 
                     $importPages[]=$importResults;
                 }

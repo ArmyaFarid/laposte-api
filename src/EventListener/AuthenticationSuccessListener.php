@@ -2,6 +2,7 @@
 
 namespace App\EventListener;
 
+use App\Entity\Client;
 use App\Entity\Employe;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
 
@@ -17,7 +18,7 @@ class AuthenticationSuccessListener
         $data = $event->getData();
         $user = $event->getUser();
 
-        if (!$user instanceof Employe) {
+        if (!$user instanceof Employe && !$user instanceof Client) {
             return;
         }
 

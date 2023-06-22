@@ -61,6 +61,9 @@ class AppFixtures extends Fixture
             $client->setTel(rand(1000000000, 9999999999));
             $client->setEmail('client' . $i . '@example.com');
             $client->setAdresse('Adresse client ' . $i);
+            $client->setRoles(["ROLE_CLIENT"]);
+
+            $client->setPassword($this->userPasswordHasher->hashPassword($client, "password"));
 
             $manager->persist($client);
 
